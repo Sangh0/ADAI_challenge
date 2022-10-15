@@ -3,9 +3,9 @@ import argparse
 from torch.utils.data import DataLoader
 from torchsummary import summary
 
-from .dataset import SemanticSegmentationDataset
-from .model.model import OurModel
-from .train import Trainer
+from dataset import SemanticSegmentationDataset
+from model.model import OurModel
+from train import Trainer
 
 
 def get_args_parser():
@@ -86,3 +86,8 @@ def main(args):
     )
 
     history = model.fit(train_loader, valid_loader)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser('PIDNet training', parents=[get_args_parser()])
+    args = parser.parse_args()
+    main(args)
