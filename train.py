@@ -7,10 +7,10 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
-from .util.callback import EarlyStopping, CheckPoint
-from .util.loss import OhemCELoss
-from .util.metric import Metrics
-from .util.scheduler import PolynomialLRDecay
+from util.callback import EarlyStopping, CheckPoint
+from util.loss import OhemCELoss
+from util.metric import Metrics
+from util.scheduler import PolynomialLRDecay
 
 
 class Trainer(object):
