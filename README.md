@@ -43,7 +43,7 @@ classes = {
 - The architecture of model  
 <img src = "https://github.com/Sangh0/Segmentation/blob/main/BiSeNetV2/figure/figure3.JPG?raw=true">  
 
-## Environments on Anaconda  
+## Create environment on anaconda  
 ```
 conda create -n adai2022 python=3.8
 conda activate adai2022
@@ -53,7 +53,7 @@ pip install -r requirements.txt
 ## Train
 ```
 usage: main.py [-h] [--weight_dir WEIGHT_DIR] [--data_dir DATA_DIR] [--lr LR] [--epochs EPOCHS] \
-               [--batch_size BATCH_SIZE] [--weight_decay WEIGHT_DECAY] [--num_classes NUM_CLASSES] \
+               [--batch_size BATCH_SIZE] [--weight_decay WEIGHT_DECAY] \[--num_classes NUM_CLASSES] \
                [--lr_scheduling LR_SCHEDULING] [--check_point CHECK_POINT] [--early_stop EARLY_STOP] \
                [--img_height IMG_HEIGHT] [--img_width IMG_WIDTH] [--train_log_step TRAIN_LOG_STEP] \
                [--valid_log_step VALID_LOG_STEP]
