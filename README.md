@@ -2,7 +2,7 @@
 - 안전한 자율주행을 위한 인공지능 알고리즘 개발 챌린지  
 - task: 2D semantic segmentation   
 
-### Introduce of classes in dataset  
+## Introduce of classes in dataset  
 ```
 classes = {
     1: [255, 0, 0], # non
@@ -36,8 +36,30 @@ classes = {
 }
 ```  
 
-### Model  
+## Model  
 - [BiSeNetV2(2020)](https://arxiv.org/abs/2004.02147)  
-- [My GitHub](https://github.com/Sangh0/Segmentation/tree/main/BiSeNetV2) Review and Implementation of BiSeNetV2 in github  
+- [My GitHub](https://github.com/Sangh0/Segmentation/tree/main/BiSeNetV2) Review and Implementation of BiSeNetV2 in github   
+- [Reference](https://github.com/CoinCheung/BiSeNet)  
 - The architecture of model  
 <img src = "https://github.com/Sangh0/Segmentation/blob/main/BiSeNetV2/figure/figure3.JPG?raw=true">  
+
+## Environments on Anaconda  
+```
+conda create -n adai2022 python=3.8
+conda activate adai2022
+pip install -r requirements.txt
+```
+
+## Train
+```
+usage: main.py [-h] [--weight_dir WEIGHT_DIR] [--data_dir DATA_DIR] [--lr LR] [--epochs EPOCHS] \
+               [--batch_size BATCH_SIZE] [--weight_decay WEIGHT_DECAY] [--num_classes NUM_CLASSES] \
+               [--lr_scheduling LR_SCHEDULING] [--check_point CHECK_POINT] [--early_stop EARLY_STOP] \
+               [--img_height IMG_HEIGHT] [--img_width IMG_WIDTH] [--train_log_step TRAIN_LOG_STEP] \
+               [--valid_log_step VALID_LOG_STEP]
+
+example: python main.py --data_dir ./dataset --weight_dir ./weights/bisenetv2_city.pth --num_classes 28
+```
+
+## Evaluate  
+- Not Implemenetation
