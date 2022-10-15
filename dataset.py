@@ -10,7 +10,7 @@ import torch
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Dataset
 
-from .util.transform import RandomHorizontalFlip, RandomResizedCrop, Compose
+from util.transform import RandomHorizontalFlip, RandomResizedCrop, Compose
 
 classes = {
     1: [255, 0, 0], # non
