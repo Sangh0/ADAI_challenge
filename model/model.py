@@ -64,11 +64,20 @@ class OurModel(nn.Module):
         self.model = BiSeNetV2(n_classes=19)
         self.model.load_state_dict(torch.load(weight_path))
         
-        self.model.head.conv_out[1].out_channels = num_classes
-        self.model.aux2.conv_out[1].out_channels = num_classes
-        self.model.aux3.conv_out[1].out_channels = num_classes
-        self.model.aux4.conv_out[1].out_channels = num_classes
-        self.model.aux5_4.conv_out[1].out_channels = num_classes
+        input_head = self.model.head.conv_out[1].in_channels
+        self.model.head.conv_out[1] = nn.Conv2d(input_head, num_classes, kernel_size=1, stride=1)
+        
+        input_aux2 = self.model.aux2.conv_out[1].in_channels
+        self.model.aux2.conv_out[1] = nn.Conv2d(input_aux2, num_classes, kernel_size=1, stride=1)
+        
+        input_aux3 = self.model.aux2.conv_out[1].in_channels
+        self.model.aux3.conv_out[1] = nn.Conv2d(input_aux3, num_classes, kernel_size=1, stride=1)
+        
+        input_aux4 = self.model.aux2.conv_out[1].in_channels
+        self.model.aux4.conv_out[1] = nn.Conv2d(input_aux4, num_classes, kernel_size=1, stride=1)
+        
+        input_aux5_4 = self.model.aux2.conv_out[1].in_channels
+        self.model.aux5_4.conv_out[1] = nn.Conv2d(input_aux5_4, num_classes, kernel_size=1, stride=1)
 
     def forward(self, x):
         return self.model(x)
