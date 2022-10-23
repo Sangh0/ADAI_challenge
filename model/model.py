@@ -59,10 +59,11 @@ class BiSeNetV2(nn.Module):
 
 class OurModel(nn.Module):
 
-    def __init__(self, weight_path, num_classes=28):
+    def __init__(self, weight_path=None, num_classes=28):
         super(OurModel, self).__init__()
         self.model = BiSeNetV2(n_classes=19)
-        self.model.load_state_dict(torch.load(weight_path))
+        if weight_path is not None:
+            self.model.load_state_dict(torch.load(weight_path))
         
         input_head = self.model.head.conv_out[1].in_channels
         self.model.head.conv_out[1] = nn.Conv2d(input_head, num_classes, kernel_size=1, stride=1)
