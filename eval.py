@@ -64,6 +64,6 @@ def main(args):
     loss_func = OhemCELoss(thresh=0.7)
     metric = Metrics(n_classes=args.num_classes, dim=1)
 
-    model = OurModel(weight_path=None, num_classes=args.num_classes)
+    model = OurModel(aux_mode='train', weight_path=None, num_classes=args.num_classes)
 
     eval(model, test_loader, loss_func, metric.mean_iou, args.weight_dir)
