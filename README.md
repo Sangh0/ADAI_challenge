@@ -62,4 +62,8 @@ example: python main.py --data_dir ./dataset --weight_dir ./weights/bisenetv2_ci
 ```
 
 ## Evaluate  
-- Not Implemenetation
+```
+usage: eval.py [-h] [--weight_dir WEIGHT_DIR] [--data_dir DATA_DIR] [--num_classes NUM_CLASSES]
+
+example: python main.py --data_dir ./dataset --weight_dir ./weights/best_weight.pt --num_classes 28
+```
