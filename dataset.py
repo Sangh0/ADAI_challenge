@@ -122,7 +122,7 @@ class SemanticSegmentationDataset(Dataset):
         crop_size=None,
         transform=None,
     ):
-        assert subset in ('train', 'valid')
+        assert subset in ('train', 'valid', 'test')
         files = get_dataset(path)
         
         train_images, train_annos, train_labels = files['train']
