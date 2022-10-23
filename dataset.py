@@ -44,7 +44,7 @@ classes = {
 }
 
 
-def get_dataset(path):
+def get_dataset(path, inference=None):
     
     def load_files(files):
         images, annos, labels = [], [], []
@@ -74,20 +74,27 @@ def get_dataset(path):
 
         return np.array(images), np.array(annos), np.array(labels)
 
-    train_folders = glob(path+'/**')
-    valid_folders = random.sample(train_folders, 5)
-    for folder in valid_folders:
-        train_folders.remove(folder)
+    if inference is None:
+        train_folders = glob(path+'/**')
+        valid_folders = random.sample(train_folders, 5)
+        for folder in valid_folders:
+            train_folders.remove(folder)
 
-    train_files = sum([glob(folder+'/annotations/*.json') \
-                       for folder in train_folders], [])
-    valid_files = sum([glob(folder+'/annotations/*.json') \
-                       for folder in valid_folders], [])
+        train_files = sum([glob(folder+'/annotations/*.json') \
+                           for folder in train_folders], [])
+        valid_files = sum([glob(folder+'/annotations/*.json') \
+                           for folder in valid_folders], [])
 
-    return {
-        'train': load_files(train_files),
-        'valid': load_files(valid_files),
-    }
+        return {
+            'train': load_files(train_files),
+            'valid': load_files(valid_files),
+        }
+
+    else:
+        folders = glob(path+'/**')
+        test_files = sum([glob(folder+'/annotations/*.json')\
+                          for folder in folders], [])
+        return load_files(test_files)
 
 
 def get_segmap(image_list, anno_list, label_list):
@@ -123,20 +130,28 @@ class SemanticSegmentationDataset(Dataset):
         transform=None,
     ):
         assert subset in ('train', 'valid', 'test')
-        files = get_dataset(path)
-        
-        train_images, train_annos, train_labels = files['train']
-        valid_images, valid_annos, valid_labels = files['valid']
+        inference = True if subset == 'test' else None
+        files = get_dataset(path, inference)
 
-        train_labels = get_segmap(train_images, train_annos, train_labels)
-        valid_labels = get_segmap(valid_images, valid_annos, valid_labels)
+        if subset in ('train', 'valid'):
+            train_images, train_annos, train_labels = files['train']
+            valid_images, valid_annos, valid_labels = files['valid']
+
+            train_labels = get_segmap(train_images, train_annos, train_labels)
+            valid_labels = get_segmap(valid_images, valid_annos, valid_labels)
+        else:
+            test_images, test_annos, test_labels = files
+            test_labels = get_segmap(test_images, test_annos, test_labels)
         
         if subset == 'train':
             self.images = train_images
             self.labels = train_labels
-        else:
+        elif subset == 'valid':
             self.images = valid_images
             self.labels = valid_labels
+        else:
+            self.images = test_images
+            self.labels = test_labels
         
         self.transform = transform
 
