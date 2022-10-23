@@ -59,9 +59,9 @@ class BiSeNetV2(nn.Module):
 
 class OurModel(nn.Module):
 
-    def __init__(self, weight_path=None, num_classes=28):
+    def __init__(self, aux_mode, weight_path=None, num_classes=28):
         super(OurModel, self).__init__()
-        self.model = BiSeNetV2(n_classes=19)
+        self.model = BiSeNetV2(n_classes=19, aux_mode=aux_mode)
         if weight_path is not None:
             self.model.load_state_dict(torch.load(weight_path))
         
