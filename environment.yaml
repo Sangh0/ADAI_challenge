@@ -1,4 +1,4 @@
-name: pytorch
+name: adad2022
 channels:
   - pytorch
   - anaconda

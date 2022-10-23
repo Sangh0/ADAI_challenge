@@ -45,9 +45,7 @@ classes = {
 
 ## Create environment on anaconda  
 ```
-conda create -n adai2022 python=3.8
-conda activate adai2022
-pip install -r requirements.txt
+conda env create --file environment.yaml
 ```
 
 ## Train
