@@ -232,8 +232,6 @@ class BGALayer(nn.Module):
                 128, 128, kernel_size=1, stride=1,
                 padding=0, bias=False),
         )
-        self.up1 = nn.Upsample(scale_factor=4)
-        self.up2 = nn.Upsample(scale_factor=4)
         self.conv = nn.Sequential(
             nn.Conv2d(
                 128, 128, kernel_size=3, stride=1,
@@ -248,10 +246,11 @@ class BGALayer(nn.Module):
         left2 = self.left2(x_d)
         right1 = self.right1(x_s)
         right2 = self.right2(x_s)
-        right1 = self.up1(right1)
+
+        right1 = F.interpolate(right1, size=dsize)
         left = left1 * torch.sigmoid(right1)
         right = left2 * torch.sigmoid(right2)
-        right = self.up2(right)
+        right = F.interpolate(right, size=dsize)
         out = self.conv(left + right)
         return out
 
@@ -273,11 +272,12 @@ class SegHead(nn.Module):
                 ConvBNReLU(mid_chan, mid_chan2, 3, stride=1)
                 ) if aux else nn.Identity(),
             nn.Conv2d(mid_chan2, out_chan, 1, 1, 0, bias=True),
-            nn.Upsample(scale_factor=up_factor, mode='bilinear', align_corners=False)
+            #nn.Upsample(scale_factor=up_factor, mode='bilinear', align_corners=False)
         )
 
-    def forward(self, x):
+    def forward(self, x, size):
         feat = self.conv(x)
         feat = self.drop(feat)
         feat = self.conv_out(feat)
+        feat = F.interpolate(feat, size=size, mode='bilinear', align_corners=False)
         return feat
