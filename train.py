@@ -1,4 +1,5 @@
 import os
+import logging
 import time
 from tqdm.auto import tqdm
 
@@ -19,6 +20,7 @@ class Trainer(object):
         self, 
         model: nn.Module, 
         lr: float, 
+        end_lr: float,
         epochs: int, 
         weight_decay: float,
         lr_scheduling: bool=True,
@@ -47,7 +49,11 @@ class Trainer(object):
         print('optimizer ready...')
 
         self.lr_scheduling = lr_scheduling
-        self.lr_scheduler = PolynomialLRDecay(self.optimizer, max_decay_steps=self.epochs)
+        self.lr_scheduler = PolynomialLRDecay(
+            self.optimizer, 
+            max_decay_steps=self.epochs,
+            end_learning_rate=end_lr,
+        )
         print('scheduler ready...')
 
         os.makedirs('./weights', exist_ok=True)
@@ -62,6 +68,11 @@ class Trainer(object):
         self.valid_log_step = valid_log_step
         
         self.writer = SummaryWriter()
+        
+        self.logger = logging.getLogger('The logs of training model')
+        self.logger.setLevel(logging.INFO)
+        stream_handler = logging.StreamHandler()
+        self.logger.add(stream_handler)
 
     def fit(self, train_loader, valid_loader):  
         print('\nStart Training Model...!')
@@ -79,11 +90,11 @@ class Trainer(object):
 
             end_time = time.time()
 
-            print(f'\n{"="*40} Epoch {epoch+1}/{self.epochs} {"="*40}'
-                  f'\n{" "*10}time: {end_time-init_time:.3f}s'
-                  f'  lr = {self.optimizer.param_groups[0]["lr"]}')
-            print(f'train loss: {train_loss:.3f}, train miou: {train_miou:.3f}'
-                  f'\nvalid loss: {valid_loss:.3f}, valid miou: {valid_miou:.3f}')
+            self.logger.info(f'\n{"="*40} Epoch {epoch+1}/{self.epochs} {"="*40}'
+                             f'\n{" "*10}time: {end_time-init_time:.3f}s'
+                             f'  lr = {self.optimizer.param_groups[0]["lr"]}')
+            self.logger.info(f'train loss: {train_loss:.3f}, train miou: {train_miou:.3f}'
+                             f'\nvalid loss: {valid_loss:.3f}, valid miou: {valid_miou:.3f}')
 
             self.writer.add_scalar('lr', self.optimizer.param_groups[0]["lr"], epoch)
             if self.lr_scheduling:
@@ -130,17 +141,18 @@ class Trainer(object):
             batch_loss += loss.item()
             
             if (batch+1) % self.valid_log_step == 0:
-                print(f'\n{" "*20} Valid Batch {batch+1}/{len(valid_loader)} {" "*20}'
-                      f'\nvalid loss: {loss:.3f}, mean IOU: {miou:.3f}')
+                self.logger.info(f'\n{" "*20} Valid Batch {batch+1}/{len(valid_loader)} {" "*20}'
+                                 f'\nvalid loss: {loss:.3f}, mean IOU: {miou:.3f}')
             
             step = len(valid_loader) * epoch + batch
-            self.writer.add_scalar('Valid/loss', loss, step)
+            self.writer.add_scalar('Valid/total loss', loss, step)
+            self.writer.add_scalar('Valid/principal loss', p_loss.item(), step)
+            self.writer.add_scalar('Valid/auxiliary loss 2', a_loss1.item(), step)
+            self.writer.add_scalar('Valid/auxiliary loss 3', a_loss2.item(), step)
+            self.writer.add_scalar('Valid/auxiliary loss 4', a_loss3.item(), step)
+            self.writer.add_scalar('Valid/auxiliary loss 5', a_loss4.item(), step)
             self.writer.add_scalar('Valid/miou', miou, step)
             
-            del images; del labels; del outputs
-            del s2; del s3; del s4; del s5
-            torch.cuda.empty_cache()
-
         return batch_loss/(batch+1), batch_miou/(batch+1)
 
 
@@ -168,15 +180,16 @@ class Trainer(object):
             self.optimizer.step()
 
             if (batch+1) % self.train_log_step == 0:
-                print(f'\n{" "*20} Train Batch {batch+1}/{len(train_loader)} {" "*20}'
-                      f'\ntrain loss: {loss:.3f}, mean IOU: {miou:.3f}')
+                self.logger.info(f'\n{" "*20} Train Batch {batch+1}/{len(train_loader)} {" "*20}'
+                                 f'\ntrain loss: {loss:.3f}, mean IOU: {miou:.3f}')
 
             step = len(train_loader) * epoch + batch
-            self.writer.add_scalar('Train/loss', loss, step)
+            self.writer.add_scalar('Train/total loss', loss, step)
+            self.writer.add_scalar('Train/principal loss', p_loss.item(), step)
+            self.writer.add_scalar('Train/auxiliary loss 2', a_loss1.item(), step)
+            self.writer.add_scalar('Train/auxiliary loss 3', a_loss2.item(), step)
+            self.writer.add_scalar('Train/auxiliary loss 4', a_loss3.item(), step)
+            self.writer.add_scalar('Train/auxiliary loss 5', a_loss4.item(), step)
             self.writer.add_scalar('Train/miou', miou, step)
-
-            del images; del labels; del outputs
-            del s2; del s3; del s4; del s5
-            torch.cuda.empty_cache()
 
         return batch_loss/(batch+1), batch_miou/(batch+1)
