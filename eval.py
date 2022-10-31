@@ -2,37 +2,63 @@ import argparse
 import time
 
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from model.model import OurModel
 from util.metric import Metrics
 from util.loss import OhemCELoss
-from dataset import SemanticSegmentationDataset
+from util.preprocess import EvalDataset
 
 
-def eval(model, data_loader, loss_func, mean_iou, weight_path=None,
-         device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
-    if weight_path is not None:
-        model.load_state_dict(torch.load(weight_path, map_location=torch.device('cpu')))
-    with torch.no_grad():
-        model.eval()
-        init_time = time.time()
+class Evaluation(object):
+
+    def __init__(
+        self,
+        path,
+        weight_path,
+    ):
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(f'device: {self.device} ready...')
+
+        self.dataloader = DataLoader(
+            EvalDataset(path=path),
+            batch_size=1,
+            shuffle=False,
+            drop_last=False,
+        )
+
+        self.model = OurModel(aux_mode='train', weight_path=None, num_classes=18)
+        self.model.load_state_dict(torch.load(weight_path, map_location=torch.device('cpu')))
+        self.model = self.model.to(self.defice)
+        print('model ready...')
+
+        self.loss_func = nn.CrossEntropyLoss().to(self.device)
+        self.metric = Metrics(n_classes=18, dim=1)
+        print('loss function and mean iou calculator ready...')
+        
+
+    
+    @torch.no_grad()
+    def test(self):
+        self.model.eval()
         batch_loss, batch_miou = 0, 0
-        for batch, (images, labels) in enumerate(data_loader):
-            images, labels = images.to(device), labels.to(device)
-            
-            outputs = model(images)
+        
+        start = time.tiem()
 
-            loss = loss_func(outputs, labels)
-            batch_loss += loss.item()
+        for batch, (images, labels) in enumerate(self.data_loader):
+            images, labels = images.to(self.device), labels.to(self.device)
 
-            miou = mean_iou(outputs, labels)
+            outputs, _, _, _, _ = self.model(images)
+            miou = self.metric.mean_iou(outputs, labels)
             batch_miou += miou.item()
 
-        end_time = time.time()
+            loss = self.loss_func(outputs, labels.squeeze())
+            batch_loss += loss.item()
 
-    print(f'time: {end_time-init_time:.2f}s')
-    print(f'loss: {batch_loss/(batch+1):.3f}, miou: {batch_miou/(batch+1):.3f}')
+        end = time.time()
+        print(f'time: {end-start:.2f}s')
+        print(f'loss: {batch_loss/(batch+1):.3f}, mean iou: {batch_miou/(batch+1):.3f}')
 
 
 def get_args_parser():
@@ -45,25 +71,14 @@ def get_args_parser():
                         help='the number of classes in dataset')
     return parser
 
+
 def main(args):
+        
+    eval = Evaluation(path=args.data_dir, weight_path=args.weight_dir)
+    eval.test()
 
-    test_data = SemanticSegmentationDataset(
-        path=args.data_dir,
-        subset='test',
-        crop_size=None,
-        transform=False,
-    )
 
-    test_loader = DataLoader(
-        test_data,
-        batch_size=1,
-        shuffle=False,
-        drop_last=False,
-    )
-
-    loss_func = OhemCELoss(thresh=0.7)
-    metric = Metrics(n_classes=args.num_classes, dim=1)
-
-    model = OurModel(aux_mode='train', weight_path=None, num_classes=args.num_classes)
-
-    eval(model, test_loader, loss_func, metric.mean_iou, args.weight_dir)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser('Evaluate', parents=[get_args_parser()])
+    args = parser.parse_args()
+    main(args)
