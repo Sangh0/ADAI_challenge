@@ -17,7 +17,7 @@ class Metrics(object):
             label = torch.argmax(label, dim=self.dim)
         elif len(label.shape) == 3:
             label = label.squeeze(dim=self.dim)
-
+            
         pred = pred.contiguous().view(-1)
         label = label.contiguous().view(-1)
 
