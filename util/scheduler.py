@@ -11,7 +11,7 @@ class PolynomialLRDecay(_LRScheduler):
         power: The power of the polynomial.
     """
     
-    def __init__(self, optimizer, max_decay_steps, end_learning_rate=1e-6, power=0.9):
+    def __init__(self, optimizer, max_decay_steps, end_learning_rate=1e-9, power=0.9):
         if max_decay_steps <= 1.:
             raise ValueError('max_decay_steps should be greater than 1.')
         self.max_decay_steps = max_decay_steps
