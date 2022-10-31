@@ -1,4 +1,6 @@
 import argparse
+import sys
+sys.path.append('/home/hoo7311/anaconda3/envs/pytorch/lib/python3.8/site-packages')
 
 from torch.utils.data import DataLoader
 from torchsummary import summary
@@ -9,7 +11,7 @@ from train import Trainer
 
 
 def get_args_parser():
-    parser = argparse.ArgumentParser(description='Training PIDNet', add_help=False)
+    parser = argparse.ArgumentParser(description='Training', add_help=False)
     parser.add_argument('--weight_dir', type=str, required=True,
                         help='the directory of weight of pre-trained model')
     parser.add_argument('--data_dir', type=str, required=True,
@@ -22,7 +24,7 @@ def get_args_parser():
                         help='batch size')
     parser.add_argument('--weight_decay', type=float, default=5e-4,
                         help='weight decay of optimizer SGD')
-    parser.add_argument('--num_classes', type=int, default=28,
+    parser.add_argument('--num_classes', type=int, default=18,
                         help='the number of classes in dataset')
     parser.add_argument('--lr_scheduling', type=bool, default=True,
                         help='apply learning rate scheduler')
@@ -46,7 +48,7 @@ def main(args):
         path=args.data_dir,
         subset='train',
         crop_size=(args.img_height, args.img_width),
-        transform=True,
+        transforms_=True,
     )
 
     train_loader = DataLoader(
@@ -59,8 +61,8 @@ def main(args):
     valid_data = SemanticSegmentationDataset(
         path=args.data_dir,
         subset='valid',
-        crop_size=(args.img_height, args.img_width),
-        transform=True,
+        crop_size=(1920, 1080),
+        transforms_=True,
     )
 
     valid_loader = DataLoader(
@@ -70,8 +72,8 @@ def main(args):
         drop_last=True,
     )
 
-    bisenetv2 = OurModel(weight_path=args.weight_dir, num_classes=args.num_classes)
-    summary(bisenetv2, (3, args.height, args.weight), device='cpu')
+    bisenetv2 = OurModel(aux_mode='train', weight_path=args.weight_dir, num_classes=args.num_classes)
+    summary(bisenetv2, (3, args.img_height, args.img_width), device='cpu')
 
     model = Trainer(
         model=bisenetv2,
@@ -88,6 +90,6 @@ def main(args):
     history = model.fit(train_loader, valid_loader)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('PIDNet training', parents=[get_args_parser()])
+    parser = argparse.ArgumentParser('Model training', parents=[get_args_parser()])
     args = parser.parse_args()
     main(args)
