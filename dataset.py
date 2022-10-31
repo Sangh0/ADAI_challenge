@@ -69,6 +69,7 @@ class SemanticSegmentationDataset(Dataset):
             27: ignore_index, 28: 17, 29: ignore_index, 30: ignore_index,
             31: ignore_index, 32: ignore_index, 33: ignore_index, 
             34: ignore_index, 35: ignore_index, 36: ignore_index,
+            37: ignore_index, 38: ignore_index, 39: ignore_index,
         }
 
         self.classes = 18
