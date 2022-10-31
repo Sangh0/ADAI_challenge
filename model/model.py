@@ -14,7 +14,7 @@ class BiSeNetV2(nn.Module):
         self.segment = SemanticBranch()
         self.bga = BGALayer()
 
-        self.head = SegHead(128, 1024, n_classes, up_factor=8, aux=False)
+        self.head = SegHead(128, 1024, n_classes, up_factor=8,  aux=False)
         if self.aux_mode == 'train':
             self.aux2 = SegHead(16, 128, n_classes, up_factor=4)
             self.aux3 = SegHead(32, 128, n_classes, up_factor=8)
@@ -28,13 +28,12 @@ class BiSeNetV2(nn.Module):
         feat_d = self.detail(x)
         feat2, feat3, feat4, feat5_4, feat_s = self.segment(x)
         feat_head = self.bga(feat_d, feat_s)
-
-        logits = self.head(feat_head)
+        logits = self.head(feat_head, size=size)
         if self.aux_mode == 'train':
-            logits_aux2 = self.aux2(feat2)
-            logits_aux3 = self.aux3(feat3)
-            logits_aux4 = self.aux4(feat4)
-            logits_aux5_4 = self.aux5_4(feat5_4)
+            logits_aux2 = self.aux2(feat2, size=size)
+            logits_aux3 = self.aux3(feat3, size=size)
+            logits_aux4 = self.aux4(feat4, size=size)
+            logits_aux5_4 = self.aux5_4(feat5_4, size=size)
             return logits, logits_aux2, logits_aux3, logits_aux4, logits_aux5_4
         elif self.aux_mode == 'eval':
             return logits,
@@ -59,7 +58,7 @@ class BiSeNetV2(nn.Module):
 
 class OurModel(nn.Module):
 
-    def __init__(self, aux_mode, weight_path=None, num_classes=28):
+    def __init__(self, aux_mode='train', weight_path=None, num_classes=28):
         super(OurModel, self).__init__()
         self.model = BiSeNetV2(n_classes=19, aux_mode=aux_mode)
         if weight_path is not None:
@@ -71,13 +70,13 @@ class OurModel(nn.Module):
         input_aux2 = self.model.aux2.conv_out[1].in_channels
         self.model.aux2.conv_out[1] = nn.Conv2d(input_aux2, num_classes, kernel_size=1, stride=1)
         
-        input_aux3 = self.model.aux2.conv_out[1].in_channels
+        input_aux3 = self.model.aux3.conv_out[1].in_channels
         self.model.aux3.conv_out[1] = nn.Conv2d(input_aux3, num_classes, kernel_size=1, stride=1)
         
-        input_aux4 = self.model.aux2.conv_out[1].in_channels
+        input_aux4 = self.model.aux4.conv_out[1].in_channels
         self.model.aux4.conv_out[1] = nn.Conv2d(input_aux4, num_classes, kernel_size=1, stride=1)
         
-        input_aux5_4 = self.model.aux2.conv_out[1].in_channels
+        input_aux5_4 = self.model.aux5_4.conv_out[1].in_channels
         self.model.aux5_4.conv_out[1] = nn.Conv2d(input_aux5_4, num_classes, kernel_size=1, stride=1)
 
     def forward(self, x):
