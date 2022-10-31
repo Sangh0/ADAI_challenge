@@ -34,7 +34,7 @@ class Trainer(object):
         self.model = model.to(self.device)
         self.epochs = epochs
 
-        self.loss_func = OhemCELoss(thresh=0.7).to(self.device)
+        self.loss_func = OhemCELoss(thresh=0.7)
         self.metric = Metrics(n_classes=28, dim=1)
         print('loss function ready...')
 
@@ -47,7 +47,7 @@ class Trainer(object):
         print('optimizer ready...')
 
         self.lr_scheduling = lr_scheduling
-        self.lr_scheduler = PolynomialLRDecay(self.optimizer, mex_decay=self.epochs)
+        self.lr_scheduler = PolynomialLRDecay(self.optimizer, max_decay_steps=self.epochs)
         print('scheduler ready...')
 
         os.makedirs('./weights', exist_ok=True)
@@ -70,11 +70,11 @@ class Trainer(object):
             init_time = time.time()
 
             train_loss, train_miou = self.train_on_batch(
-                train_loader, epoch, self.train_log_step,
+                train_loader, epoch,
             )
 
             valid_loss, valid_miou = self.valid_on_batch(
-                valid_loader, epoch, self.valid_log_step,
+                valid_loader, epoch,
             )
 
             end_time = time.time()
@@ -85,6 +85,7 @@ class Trainer(object):
             print(f'train loss: {train_loss:.3f}, train miou: {train_miou:.3f}'
                   f'\nvalid loss: {valid_loss:.3f}, valid miou: {valid_miou:.3f}')
 
+            self.writer.add_scalar('lr', self.optimizer.param_groups[0]["lr"], epoch)
             if self.lr_scheduling:
                 self.lr_scheduler.step()
 
@@ -120,15 +121,15 @@ class Trainer(object):
             miou = self.metric.mean_iou(outputs, labels)
             batch_miou += miou.item()
             
-            p_loss = self.loss_func(outputs, labels)
-            a_loss1 = self.loss_func(s2, labels)
-            a_loss2 = self.loss_func(s3, labels)
-            a_loss3 = self.loss_func(s4, labels)
-            a_loss4 = self.loss_func(s5, labels)
+            p_loss = self.loss_func(outputs, labels.squeeze())
+            a_loss1 = self.loss_func(s2, labels.squeeze())
+            a_loss2 = self.loss_func(s3, labels.squeeze())
+            a_loss3 = self.loss_func(s4, labels.squeeze())
+            a_loss4 = self.loss_func(s5, labels.squeeze())
             loss = p_loss + (a_loss1 + a_loss2 + a_loss3 + a_loss4)
             batch_loss += loss.item()
             
-            if self.valid_log_step % batch == 0:
+            if (batch+1) % self.valid_log_step == 0:
                 print(f'\n{" "*20} Valid Batch {batch+1}/{len(valid_loader)} {" "*20}'
                       f'\nvalid loss: {loss:.3f}, mean IOU: {miou:.3f}')
             
@@ -154,19 +155,19 @@ class Trainer(object):
             outputs, s2, s3, s4, s5 = self.model(images)
             miou = self.metric.mean_iou(outputs, labels)
             batch_miou += miou.item()
-
-            p_loss = self.loss_func(outputs, labels)
-            a_loss1 = self.loss_func(s2, labels)
-            a_loss2 = self.loss_func(s3, labels)
-            a_loss3 = self.loss_func(s4, labels)
-            a_loss4 = self.loss_func(s5, labels)
+            
+            p_loss = self.loss_func(outputs, labels.squeeze())
+            a_loss1 = self.loss_func(s2, labels.squeeze())
+            a_loss2 = self.loss_func(s3, labels.squeeze())
+            a_loss3 = self.loss_func(s4, labels.squeeze())
+            a_loss4 = self.loss_func(s5, labels.squeeze())
             loss = p_loss + (a_loss1 + a_loss2 + a_loss3 + a_loss4)
             batch_loss += loss.item()
 
             loss.backward()
             self.optimizer.step()
 
-            if self.train_log_step % batch == 0:
+            if (batch+1) % self.train_log_step == 0:
                 print(f'\n{" "*20} Train Batch {batch+1}/{len(train_loader)} {" "*20}'
                       f'\ntrain loss: {loss:.3f}, mean IOU: {miou:.3f}')
 
