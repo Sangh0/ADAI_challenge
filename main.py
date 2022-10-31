@@ -1,3 +1,7 @@
+import os
+os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
 import argparse
 import sys
 sys.path.append('/home/hoo7311/anaconda3/envs/pytorch/lib/python3.8/site-packages')
@@ -16,13 +20,15 @@ def get_args_parser():
                         help='the directory of weight of pre-trained model')
     parser.add_argument('--data_dir', type=str, required=True,
                         help='the directory where your dataset is located')
-    parser.add_argument('--lr', type=float, default=1e-2,
+    parser.add_argument('--lr', type=float, default=5e-3,
                         help='learning rate for training')
+    parser.add_argument('--end_lr', type=float, default=1e-7,
+                        help='the final learning rate value of scheduler')
     parser.add_argument('--epochs', type=int, default=100,
                         help='epochs for training')
-    parser.add_argument('--batch_size', type=int, default=8,
+    parser.add_argument('--batch_size', type=int, default=16,
                         help='batch size')
-    parser.add_argument('--weight_decay', type=float, default=5e-4,
+    parser.add_argument('--weight_decay', type=float, default=1e-4,
                         help='weight decay of optimizer SGD')
     parser.add_argument('--num_classes', type=int, default=18,
                         help='the number of classes in dataset')
@@ -32,13 +38,13 @@ def get_args_parser():
                         help='save a weight of model during training when a loss of validating is decreased')
     parser.add_argument('--early_stop', type=bool, default=False,
                         help='stop the training of model when a loss of validating is increased')
-    parser.add_argument('--img_height', type=int, default=640,
+    parser.add_argument('--img_height', type=int, default=1024,
                         help='the size of image height')
-    parser.add_argument('--img_width', type=int, default=640, 
+    parser.add_argument('--img_width', type=int, default=1024, 
                         help='the size of image width')
     parser.add_argument('--train_log_step', type=int, default=100,
                         help='print out the logs of training every steps')
-    parser.add_argument('--valid_log_step', type=int, default=20,
+    parser.add_argument('--valid_log_step', type=int, default=30,
                         help='print out the logs of validating every steps')
     return parser
 
@@ -78,6 +84,7 @@ def main(args):
     model = Trainer(
         model=bisenetv2,
         lr=args.lr,
+        end_lr=args.end_lr,
         epochs=args.epochs,
         weight_decay=args.weight_decay,
         lr_scheduling=args.lr_scheduling,
