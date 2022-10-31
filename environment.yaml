@@ -5,24 +5,21 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - numpy=1.23.1=py38h42add53_0
-  - numpy-base=1.23.1=py38hadd41eb_0
-  - opencv=4.6.0=py38h8794c10_0
-  - openh264=1.8.0=h98b2900_0
-  - openssl=1.1.1q=h1a28f6b_0
-  - pillow=9.2.0=py38h4d1bdd5_1
-  - pip=22.1.2=py38hca03da5_0
-  - python=3.8.13=hbdb9e5c_0
-  - python-dateutil=2.8.2=pyhd3eb1b0_0
-  - python-fastjsonschema=2.16.2=py38hca03da5_0
-  - pytorch=1.12.1=py3.8_0
-  - scikit-learn=1.0.2=py38h9197a36_1
-  - scipy=1.7.3=py38h2f0f56f_0
-  - tensorboard=2.6.0=py_0
-  - terminado=0.13.1=py38hca03da5_0
-  - torchvision=0.13.1=py38_cpu
-  - tornado=6.2=py38h1a28f6b_0
-  - tqdm=4.64.1=pyhd8ed1ab_0
+  - numpy=1.23.1
+  - numpy-base=1.23.1
+  - opencv=4.6.0
+  - openssl=1.1.1
+  - pillow=9.2.0
+  - pip=22.1.2
+  - python=3.8.13
+  - pytorch=1.12.1
+  - scikit-learn=1.0.2
+  - scipy=1.7.3
+  - tensorboard=2.6.0
+  - terminado=0.13.1
+  - torchvision=0.13.1
+  - tornado=6.2
+  - tqdm=4.64.1
   - pip:
     - importlib-metadata==5.0.0
     - oauthlib==3.2.1
