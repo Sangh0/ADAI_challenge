@@ -44,7 +44,7 @@ classes = {
 }
 
 
-def get_dataset(path, inference=None):
+def get_dataset(path):
     
     def load_files(files):
         images, annos, labels = [], [], []
@@ -74,27 +74,11 @@ def get_dataset(path, inference=None):
 
         return np.array(images), np.array(annos), np.array(labels)
 
-    if inference is None:
-        train_folders = glob(path+'/**')
-        valid_folders = random.sample(train_folders, 5)
-        for folder in valid_folders:
-            train_folders.remove(folder)
+    folders = glob(path+'/**')
+    files = sum([glob(folder+'/annotations/*.json') \
+                for folder in train_folders], [])
 
-        train_files = sum([glob(folder+'/annotations/*.json') \
-                           for folder in train_folders], [])
-        valid_files = sum([glob(folder+'/annotations/*.json') \
-                           for folder in valid_folders], [])
-
-        return {
-            'train': load_files(train_files),
-            'valid': load_files(valid_files),
-        }
-
-    else:
-        folders = glob(path+'/**')
-        test_files = sum([glob(folder+'/annotations/*.json')\
-                          for folder in folders], [])
-        return load_files(test_files)
+    return load_files(files)
 
 
 def get_segmap(image_list, anno_list, label_list):
@@ -104,15 +88,13 @@ def get_segmap(image_list, anno_list, label_list):
         for i in range(len(images)):
             img = images[i].copy()
             for j in range(len(annos[i])):
-                cv2.fillPoly(img, [annos[i][j]], classes[labels[i][j]], cv2.LINE_AA)
+                cv2.fillPoly(img, [annos[i][j]], classes[labels[i][j]], cv2.LINE_8)
             rgb_list.append(img)
 
         return np.array(rgb_list)
 
-    rgb_list = get_rgb(image_list, anno_list, label_list)
-
     segmap_list = []
-    for rgb in tqdm(rgb_list):
+    for rgb in tqdm(get_rgb(image_list, anno_list, label_list))
         label = np.ones(rgb.shape[:2])
         for i, color in enumerate(classes.values()):
             label[(rgb==color).sum(2)==3] = i
@@ -120,63 +102,47 @@ def get_segmap(image_list, anno_list, label_list):
     return np.array(segmap_list).astype(np.uint8)
 
 
-class SemanticSegmentationDataset(Dataset):
-    
-    def __init__(
-        self,
-        path,
-        subset='train',
-        crop_size=None,
-        transform=None,
-    ):
-        assert subset in ('train', 'valid', 'test')
-        inference = True if subset == 'test' else None
-        files = get_dataset(path, inference)
+class EvalDataset(Dataset):
 
-        if subset in ('train', 'valid'):
-            train_images, train_annos, train_labels = files['train']
-            valid_images, valid_annos, valid_labels = files['valid']
-
-            train_labels = get_segmap(train_images, train_annos, train_labels)
-            valid_labels = get_segmap(valid_images, valid_annos, valid_labels)
-        else:
-            test_images, test_annos, test_labels = files
-            test_labels = get_segmap(test_images, test_annos, test_labels)
+    def __init__(self, path):
         
-        if subset == 'train':
-            self.images = train_images
-            self.labels = train_labels
-        elif subset == 'valid':
-            self.images = valid_images
-            self.labels = valid_labels
-        else:
-            self.images = test_images
-            self.labels = test_labels
+        self.images, annos, labels = get_dataset(path)
+        self.labels = get_segmap(images, annos, labels)
         
-        self.transform = transform
-
         self.totensor = transforms.Compose([
             transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
 
-        self.transform = Compose([
-            RandomHorizontalFlip(),
-            RandomResizedCrop(
-                scales=(0.5, 0.75, 1.0, 1.25, 1.5, 1.75),
-                size=(crop_size)
-            ),
-        ])
+        self.mapping_classes = {
+            0: ignore_index, 1: 0, 2: ignore_index, 3: ignore_index,
+            4: 1, 5: 2, 6: ignore_index, 7: ignore_index, 8: ignore_index,
+            9: 3, 10: ignore_index, 11: 4, 12: 5, 13: 6, 14: 7, 15: 8,
+            16: ignore_index, 17: 9, 18: 10, 19: 11, 20: 12, 21: 13,
+            22: 14, 23: ignore_index, 24: ignore_index, 25: 15, 26: 16,
+            27: ignore_index, 28: 17, 29: ignore_index, 30: ignore_index,
+            31: ignore_index, 32: ignore_index, 33: ignore_index,
+            34: ignore_index, 35: ignore_index, 36: ignore_index,
+            37: ignore_index, 38: ignore_index, 39: ignore_index,
+        }
 
     def __len__(self):
         return len(self.labels)
-
+    
     def __getitem__(self, idx):
         images = self.images[idx]
         labels = self.labels[idx]
-        if self.transform is not None:
-            im_lb = dict(im=images, lb=labels)
-            im_lb = self.transform(im_lb)
-            images, labels = im_lb['im'], im_lb['lb']
+        
+        labels = labels.astype(np.int32)[np.newaxis, :]
+
         images = self.totensor(images)
-        labels = torch.LongTensor(labels)
+        labels = self.convert_label(labels)
+
         return images, labels
+
+    def convert_label(self, label):
+        for k in self.mapping_classes:
+            label[label==k] = self.mapping_classes[k]
+        return torch.LongTensor(label)
+
+
