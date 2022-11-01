@@ -1,10 +1,5 @@
 import os
-os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-
 import argparse
-import sys
-sys.path.append('/home/hoo7311/anaconda3/envs/pytorch/lib/python3.8/site-packages')
 
 from torch.utils.data import DataLoader
 from torchsummary import summary
@@ -83,6 +78,7 @@ def main(args):
 
     model = Trainer(
         model=bisenetv2,
+        num_classes=args.num_classes,
         lr=args.lr,
         end_lr=args.end_lr,
         epochs=args.epochs,
