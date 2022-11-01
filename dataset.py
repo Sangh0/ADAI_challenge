@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, Dataset
 from util.transform_pillow import (
     RandomCrop, HorizontalFlip, RandomScale, Compose,
 )
+from util.preprocess import get_dataset, get_segmap
 
 
 class SemanticSegmentationDataset(Dataset):
@@ -27,7 +28,7 @@ class SemanticSegmentationDataset(Dataset):
         self.subset = subset
 
         train_folders = glob(path+'/**')
-        valid_folders = random.sample(train_folders, 5)
+        valid_folders = [path+'/dark1', path+'/dark4', path+'/white1', path+'/white8', path+'/white16']
         for folder in valid_folders:
             train_folders.remove(folder)
 
@@ -93,6 +94,50 @@ class SemanticSegmentationDataset(Dataset):
         images = self.totensor(images)
         labels = np.array(labels).astype(np.int32)[np.newaxis, :]
         labels = self.convert_label(labels)
+        return images, labels
+
+    def convert_label(self, label):
+        for k in self.mapping_classes:
+            label[label==k] = self.mapping_classes[k]
+        return torch.LongTensor(label)
+
+
+class EvalDataset(Dataset):
+
+    def __init__(self, path):
+
+        self.images, annos, labels = get_dataset(path)
+        self.labels = get_segmap(images, annos, labels)
+
+        self.totensor = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ])
+
+        self.mapping_classes = {
+            0: ignore_index, 1: 0, 2: ignore_index, 3: ignore_index,
+            4: 1, 5: 2, 6: ignore_index, 7: ignore_index, 8: ignore_index,
+            9: 3, 10: ignore_index, 11: 4, 12: 5, 13: 6, 14: 7, 15: 8,
+            16: ignore_index, 17: 9, 18: 10, 19: 11, 20: 12, 21: 13,
+            22: 14, 23: ignore_index, 24: ignore_index, 25: 15, 26: 16,
+            27: ignore_index, 28: 17, 29: ignore_index, 30: ignore_index,
+            31: ignore_index, 32: ignore_index, 33: ignore_index,
+            34: ignore_index, 35: ignore_index, 36: ignore_index,
+            37: ignore_index, 38: ignore_index, 39: ignore_index,
+        }
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        images = self.images[idx]
+        labels = self.labels[idx]
+
+        labels = labels.astype(np.int32)[np.newaxis, :]
+
+        images = self.totensor(images)
+        labels = self.convert_label(labels)
+
         return images, labels
 
     def convert_label(self, label):
