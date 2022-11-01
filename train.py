@@ -72,7 +72,7 @@ class Trainer(object):
         self.logger = logging.getLogger('The logs of training model')
         self.logger.setLevel(logging.INFO)
         stream_handler = logging.StreamHandler()
-        self.logger.add(stream_handler)
+        self.logger.addHandler(stream_handler)
 
     def fit(self, train_loader, valid_loader):  
         print('\nStart Training Model...!')
