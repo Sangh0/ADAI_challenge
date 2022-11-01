@@ -101,15 +101,36 @@ def get_segmap(image_list, anno_list, label_list):
         segmap_list.append(label)
     return np.array(segmap_list).astype(np.uint8)
 
-def degugging(path):
-    folders = glob(path+'/**')
-    # check each folder
-    for folder in folders:
-        print('check', folder)
-        images = sorted(glob(folder+'/images/*.jpg'))
-        for file in images:
-            label_file = file.replace('/images', 'labels2')
-            if not os.path.isfile(label_file):
-                print(label_file)
-            else:
-                pass
+
+class Debugging(object):
+    
+    def __init__(self, path, num_classes=28):
+        self.path = path
+        self.num_classes = num_classes - 1
+        print('Start Debugging..!')
+
+    def check_all_files(self):
+        folders = glob(self.path+'/**')
+        
+        for folder in tqdm(folders):
+            print('check', folder)
+            
+            image_list = sorted(glob(folder + '/images/*.jpg'))
+            for image in image_list:
+                label_file = image.replace('/images', 'labels')
+                
+                if not os.path.isfile(label_file):
+                    print('does not exist !!!', label_file)
+                else:
+                    pass
+
+
+    def check_segmaps(self, range_=50):
+        files = glob(self.path+'/**/labels/*')
+
+        for file in tqdm(files):
+            label = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
+            for i in range(self.num_classes, range_, 1):
+                summatation = (label==i).sum()
+                if summatation != 0:
+                    print(f'file: {file}, error class: {i} th class')
