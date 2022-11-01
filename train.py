@@ -19,6 +19,7 @@ class Trainer(object):
     def __init__(
         self, 
         model: nn.Module, 
+        num_classes: int,
         lr: float, 
         end_lr: float,
         epochs: int, 
@@ -37,7 +38,7 @@ class Trainer(object):
         self.epochs = epochs
 
         self.loss_func = OhemCELoss(thresh=0.7)
-        self.metric = Metrics(n_classes=28, dim=1)
+        self.metric = Metrics(n_classes=num_classes, dim=1)
         print('loss function ready...')
 
         self.optimizer = optim.SGD(
@@ -80,28 +81,26 @@ class Trainer(object):
         for epoch in tqdm(range(self.epochs)):
             init_time = time.time()
 
-            train_loss, train_miou = self.train_on_batch(
-                train_loader, epoch,
-            )
+            train_loss, train_miou, train_pix_acc = \
+                self.train_on_batch(train_loader, epoch)
 
-            valid_loss, valid_miou = self.valid_on_batch(
-                valid_loader, epoch,
-            )
+            valid_loss, valid_miou, valid_pix_acc = \
+                self.valid_on_batch(valid_loader, epoch)
 
             end_time = time.time()
 
             self.logger.info(f'\n{"="*40} Epoch {epoch+1}/{self.epochs} {"="*40}'
                              f'\n{" "*10}time: {end_time-init_time:.3f}s'
                              f'  lr = {self.optimizer.param_groups[0]["lr"]}')
-            self.logger.info(f'train loss: {train_loss:.3f}, train miou: {train_miou:.3f}'
-                             f'\nvalid loss: {valid_loss:.3f}, valid miou: {valid_miou:.3f}')
+            self.logger.info(f'train loss: {train_loss:.3f}, train miou: {train_miou:.3f}, train pixel acc: {train_pix_acc:.3f}'
+                    f'\nvalid loss: {valid_loss:.3f}, valid miou: {valid_miou:.3f}, valid pixel acc: {valid_pix_acc:.3f}')
 
             self.writer.add_scalar('lr', self.optimizer.param_groups[0]["lr"], epoch)
             if self.lr_scheduling:
                 self.lr_scheduler.step()
 
             if self.check_point:
-                path = f'./weights/check_pooint_{epoch+1}.pt'
+                path = f'./weights/check_point_{epoch+1}.pt'
                 self.cp(valid_loss, self.model, path)
 
             if self.early_stop:
@@ -123,14 +122,16 @@ class Trainer(object):
     @torch.no_grad()
     def valid_on_batch(self, valid_loader, epoch):
         self.model.eval()
-        batch_loss, batch_miou = 0, 0
+        batch_loss, batch_miou, batch_pix_acc = 0, 0, 0
         for batch, (images, labels) in enumerate(valid_loader):
             images, labels = images.to(self.device), labels.to(self.device)
 
             outputs, s2, s3, s4, s5 = self.model(images)
             
             miou = self.metric.mean_iou(outputs, labels)
+            pix_acc = self.metric.pixel_acc(outputs, labels)
             batch_miou += miou.item()
+            batch_pix_acc += pix_acc.item()
             
             p_loss = self.loss_func(outputs, labels.squeeze())
             a_loss1 = self.loss_func(s2, labels.squeeze())
@@ -142,23 +143,24 @@ class Trainer(object):
             
             if (batch+1) % self.valid_log_step == 0:
                 self.logger.info(f'\n{" "*20} Valid Batch {batch+1}/{len(valid_loader)} {" "*20}'
-                                 f'\nvalid loss: {loss:.3f}, mean IOU: {miou:.3f}')
+                        f'\nvalid loss: {loss:.3f}, mean IOU: {miou:.3f}, pix accuracy: {pix_acc:.3f}')
             
             step = len(valid_loader) * epoch + batch
-            self.writer.add_scalar('Valid/total loss', loss, step)
+            self.writer.add_scalar('Valid/total loss', loss.item(), step)
             self.writer.add_scalar('Valid/principal loss', p_loss.item(), step)
             self.writer.add_scalar('Valid/auxiliary loss 2', a_loss1.item(), step)
             self.writer.add_scalar('Valid/auxiliary loss 3', a_loss2.item(), step)
             self.writer.add_scalar('Valid/auxiliary loss 4', a_loss3.item(), step)
             self.writer.add_scalar('Valid/auxiliary loss 5', a_loss4.item(), step)
-            self.writer.add_scalar('Valid/miou', miou, step)
-            
-        return batch_loss/(batch+1), batch_miou/(batch+1)
+            self.writer.add_scalar('Valid/miou', miou.item(), step)
+            self.writer.add_scalar('Valid/pixel accuracy', pix_acc.item(), step)
+
+        return batch_loss/(batch+1), batch_miou/(batch+1), batch_pix_acc/(batch+1)
 
 
     def train_on_batch(self, train_loader, epoch):
         self.model.train()
-        batch_loss, batch_miou = 0, 0
+        batch_loss, batch_miou, batch_pix_acc = 0, 0, 0
         for batch, (images, labels) in enumerate(train_loader):
             images, labels = images.to(self.device), labels.to(self.device)
 
@@ -166,7 +168,9 @@ class Trainer(object):
 
             outputs, s2, s3, s4, s5 = self.model(images)
             miou = self.metric.mean_iou(outputs, labels)
+            pix_acc = self.metric.pixel_acc(outputs, labels)
             batch_miou += miou.item()
+            batch_pix_acc += pix_acc.item()
             
             p_loss = self.loss_func(outputs, labels.squeeze())
             a_loss1 = self.loss_func(s2, labels.squeeze())
@@ -181,7 +185,7 @@ class Trainer(object):
 
             if (batch+1) % self.train_log_step == 0:
                 self.logger.info(f'\n{" "*20} Train Batch {batch+1}/{len(train_loader)} {" "*20}'
-                                 f'\ntrain loss: {loss:.3f}, mean IOU: {miou:.3f}')
+                        f'\ntrain loss: {loss:.3f}, mean IOU: {miou:.3f}, pix accuracy: {pix_acc:.3f}')
 
             step = len(train_loader) * epoch + batch
             self.writer.add_scalar('Train/total loss', loss, step)
@@ -191,5 +195,6 @@ class Trainer(object):
             self.writer.add_scalar('Train/auxiliary loss 4', a_loss3.item(), step)
             self.writer.add_scalar('Train/auxiliary loss 5', a_loss4.item(), step)
             self.writer.add_scalar('Train/miou', miou, step)
+            self.writer.add_scalar('Train/pixel accuracy', pix_acc, step)
 
-        return batch_loss/(batch+1), batch_miou/(batch+1)
+        return batch_loss/(batch+1), batch_miou/(batch+1), batch_pix_acc/(batch+1)
