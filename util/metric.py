@@ -3,22 +3,20 @@ import torch
 import torch.nn.functional as F
 
 class Metrics(object):
-    def __init__(self, n_classes=19, dim=1, smooth=1e-10):
+    def __init__(self, n_classes=18, dim=1, smooth=1e-10):
         self.n_classes = n_classes
         self.dim = dim
         self.smooth = smooth
-
+    
+    @torch.no_grad()
     def mean_iou(self, pred, label):
-        if len(pred.shape) == 4 or pred.shape[1] != 1:
-            pred = torch.argmax(pred, dim=self.dim)
-        elif len(pred.shape) == 3:
-            pred = pred.squeeze(dim=self.dim)
-        if len(label.shape) == 4 or label.shape[1] != 1:
-            label = torch.argmax(label, dim=self.dim)
-        elif len(label.shape) == 3:
-            label = label.squeeze(dim=self.dim)
-            
+        if pred.shape[1] != self.n_classes:
+            raise ValueError(f'The number of classes does not match, # of classes: {self.n_classes}, pred classes: {pred.shape[1]}')
+        
+        pred = F.softmax(pred, dim=self.dim)
+        pred = torch.argmax(pred, dim=self.dim)
         pred = pred.contiguous().view(-1)
+
         label = label.contiguous().view(-1)
 
         iou_per_class = []
@@ -38,22 +36,12 @@ class Metrics(object):
 
         return np.nanmean(iou_per_class)
 
+    @torch.no_grad()
     def pixel_acc(self, pred, label):
-        if len(pred.shape) == 4 or pred.shape[1] != 1:
-            pred = torch.argmax(pred, dim=self.dim)
-        elif len(pred.shape) == 3:
-            pred = pred.squeeze(dim=self.dim)
-        if len(label.shape) == 4 or label.shape[1] != 1:
-            label = torch.argmax(label, dim=self.dim)
-        elif len(label.shape) == 3:
-            label = label.squeeze(dim=self.dim)
+        pred = F.softmax(pred, dim=self.dim)
+        pred = torch.argmax(pred, dim=self.dim)
+        
+        correct = torch.eq(pred, label).int()
+        accuracy = correct.sum() / correct.numel()
 
-        pred = pred.contiguous().view(-1)
-        label = label.contiguous().view(-1)
-
-        intersection = torch.sum(pred==label)
-        difference = torch.sum(pred!=label)
-
-        union = intersection + difference * 2 + self.smooth
-
-        return intersection/union
+        return accuracy
