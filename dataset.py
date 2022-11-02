@@ -32,17 +32,19 @@ class SemanticSegmentationDataset(Dataset):
         for folder in valid_folders:
             train_folders.remove(folder)
 
-        train_labels = sum([glob(folder+'/labels2/*.jpg') for folder in train_folders], [])
-        valid_labels = sum([glob(folder+'/labels2/*.jpg') for folder in valid_folders], [])
+        train_labels = sum([glob(folder+'/labels/*.png') for folder in train_folders], [])
+        valid_labels = sum([glob(folder+'/labels/*.png') for folder in valid_folders], [])
 
         if subset == 'train':
-            self.images = [file.replace('labels2', 'images') \
+            self.images = [file.replace('labels', 'images').replace('.png', '.jpg') \
                     for file in train_labels]
             self.labels = train_labels
+            print('the total number of train data:', len(self.labels))
         else:
-            self.images = [file.replace('labels2', 'images') \
+            self.images = [file.replace('labels', 'images').replace('.png', '.jpg') \
                     for file in valid_labels]
             self.labels = valid_labels
+            print('the total number of valid data:', len(self.labels))
 
         assert len(self.images) == len(self.labels), 'image and label size does not match'
 
@@ -67,10 +69,7 @@ class SemanticSegmentationDataset(Dataset):
             9: 3, 10: ignore_index, 11: 4, 12: 5, 13: 6, 14: 7, 15: 8,
             16: ignore_index, 17: 9, 18: 10, 19: 11, 20: 12, 21: 13, 
             22: 14, 23: ignore_index, 24: ignore_index, 25: 15, 26: 16, 
-            27: ignore_index, 28: 17, 29: ignore_index, 30: ignore_index,
-            31: ignore_index, 32: ignore_index, 33: ignore_index, 
-            34: ignore_index, 35: ignore_index, 36: ignore_index,
-            37: ignore_index, 38: ignore_index, 39: ignore_index,
+            27: ignore_index, 28: 17,
         }
 
         self.classes = 18
@@ -108,22 +107,22 @@ class EvalDataset(Dataset):
 
         self.images, annos, labels = get_dataset(path)
         self.labels = get_segmap(images, annos, labels)
+        
+        assert len(self.images) == len(self.labels)
+        print('The number of dataset is {len(self.labels)}')
 
         self.totensor = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
-
+        
         self.mapping_classes = {
             0: ignore_index, 1: 0, 2: ignore_index, 3: ignore_index,
             4: 1, 5: 2, 6: ignore_index, 7: ignore_index, 8: ignore_index,
             9: 3, 10: ignore_index, 11: 4, 12: 5, 13: 6, 14: 7, 15: 8,
             16: ignore_index, 17: 9, 18: 10, 19: 11, 20: 12, 21: 13,
             22: 14, 23: ignore_index, 24: ignore_index, 25: 15, 26: 16,
-            27: ignore_index, 28: 17, 29: ignore_index, 30: ignore_index,
-            31: ignore_index, 32: ignore_index, 33: ignore_index,
-            34: ignore_index, 35: ignore_index, 36: ignore_index,
-            37: ignore_index, 38: ignore_index, 39: ignore_index,
+            27: ignore_index, 28: 17
         }
 
     def __len__(self):
