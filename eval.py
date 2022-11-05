@@ -1,8 +1,8 @@
-import sys
-sys.path.append('/home/hoo7311/anaconda3/envs/pytorch/lib/python3.8/site-packages')
 import os
 import argparse
 import time
+import numpy as np
+import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
 
 import torch
@@ -109,10 +109,10 @@ class Evaluation(object):
     
     
     def label2color(self, labels):
-        B, H, W = labels.size()
-        image = np.zeros(shape=(B, H, W, 3), dtype=np.int32)
+        _, H, W = labels.size()
+        image = np.zeros(shape=(H, W, 3), dtype=np.int32)
         for i in self.labels_info.keys():
-            image[(labels.unsqueeze(dim=0)==i).all(axis=0) = self.labels_info[i]]
+            image[(labels==i).all(axis=0)] = self.labels_info[i]
         return image
     
 
@@ -122,20 +122,21 @@ class Evaluation(object):
             os.makedirs(folder, exist_ok=True)
         
         for i in range(counts):
-            rgb_output = torch.argmax(outputs[i], dim=0)
+            argmax_output = torch.argmax(outputs[i], dim=0).unsqueeze(dim=0)
+            rgb_output = self.label2color(argmax_output)
             fig, ax = plt.subplots(2, 2, figsize=(20,12))
-            fig.suptitle(f'Mean IOU score: {mious[i]}*100:.2f', sioze=20)
+            fig.suptitle(f'Mean IOU score: {mious[i]}*100:.2f', size=20)
             ax[0,0].imshow(self.un_normalize(images[i]).permute(1,2,0))
             ax[0,0].axis('off')
             ax[0,0].set_title('Input Image')
             ax[0,1].imshow(self.label2color(labels[i]))
             ax[0,1].axis('off')
             ax[0,1].set_title('Label Image')
-            ax[1,0].imshow(self.label2color(rgb_output))
+            ax[1,0].imshow(rgb_output)
             ax[1,0].axis('off')
             ax[1,0].set_title('Output Image')
             ax[1,1].imshow(self.un_normalize(images[i]).permute(1,2,0))
-            ax[1,1].imshow(self.label2color(rgb_output), alpha=0.5)
+            ax[1,1].imshow(self.label2color(argmax_output), alpha=0.5)
             ax[1,1].axis('off')
             ax[1,1].set_title('Overlay Image')
             plt.show()
