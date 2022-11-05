@@ -88,14 +88,16 @@ class Evaluation(object):
 
         for batch, (images, labels) in enumerate(tqdm(self.dataloader)):
             images, labels = images.to(self.device), labels.to(self.device)
-            image_list.append(images)
-            label_list.append(labels)
+            image_list.append(images.detach().cpu())
+            label_list.append(labels.detach().cpu())
             
             outputs, _, _, _, _ = self.model(images)
-            output_list.append(outputs)
+            output_list.append(outputs.detach().cpu())
             miou = self.metric.mean_iou(outputs, labels)
             miou_list.append(miou.item())
             batch_miou += miou.item()
+
+            torch.cuda.empty_cache()
 
         end = time.time()
         print(f'time: {end-start:.2f}s')
@@ -108,6 +110,7 @@ class Evaluation(object):
         }
     
     
+    @torch.no_grad()
     def label2color(self, labels):
         _, H, W = labels.size()
         image = np.zeros(shape=(H, W, 3), dtype=np.int32)
@@ -115,7 +118,8 @@ class Evaluation(object):
             image[(labels==i).all(axis=0)] = self.labels_info[i]
         return image
     
-
+    
+    @torch.no_grad()
     def visualize(self, images, labels, outputs, mious, counts, save=False):
         if save:
             folder = './figures'
