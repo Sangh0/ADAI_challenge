@@ -120,6 +120,7 @@ class Evaluation(object):
         if save:
             folder = './figures'
             os.makedirs(folder, exist_ok=True)
+        
         for i in range(counts):
             rgb_output = torch.argmax(outputs[i], dim=0)
             fig, ax = plt.subplots(2, 2, figsize=(20,12))
