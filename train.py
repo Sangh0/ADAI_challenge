@@ -29,6 +29,7 @@ class Trainer(object):
         early_stop: bool=False,
         train_log_step: int=30, 
         valid_log_step: int=20,
+        weight_save_dir='./weights',
     ):
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -57,12 +58,12 @@ class Trainer(object):
         )
         print('scheduler ready...')
 
-        os.makedirs('./weights', exist_ok=True)
+        os.makedirs(weight_save_dir, exist_ok=True)
         self.check_point = check_point
         self.cp = CheckPoint(verbose=True)
 
         self.early_stop = early_stop
-        self.es = EarlyStopping(patience=20, verbose=True, path='./weights/early_stop.pt')
+        self.es = EarlyStopping(patience=20, verbose=True, path=weight_save_dir+'/early_stop.pt')
         print('callbacks ready...')
 
         self.train_log_step = train_log_step
@@ -74,6 +75,8 @@ class Trainer(object):
         self.logger.setLevel(logging.INFO)
         stream_handler = logging.StreamHandler()
         self.logger.addHandler(stream_handler)
+            
+        self.weight_save_dir = weight_save_dir
 
     def fit(self, train_loader, valid_loader):  
         print('\nStart Training Model...!')
@@ -100,7 +103,7 @@ class Trainer(object):
                 self.lr_scheduler.step()
 
             if self.check_point:
-                path = f'./weights/check_point_{epoch+1}.pt'
+                path = self.weight_save_dir+f'/check_point_{epoch+1}.pt'
                 self.cp(valid_loss, self.model, path)
 
             if self.early_stop:
