@@ -3,6 +3,9 @@ import argparse
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
+import sys
+sys.path.append('/home/hoo7311/anaconda3/envs/pytorch/lib/python3.8/site-packages')
+
 from torch.utils.data import DataLoader
 from torchsummary import summary
 
@@ -13,6 +16,8 @@ from train import Trainer
 
 def get_args_parser():
     parser = argparse.ArgumentParser(description='Training', add_help=False)
+    parser.add_argument('--weight_save_dir', type=str, required=True,
+                        help='the path to store weights')
     parser.add_argument('--weight_dir', type=str, required=True,
                         help='the directory of weight of pre-trained model')
     parser.add_argument('--data_dir', type=str, required=True,
@@ -27,7 +32,7 @@ def get_args_parser():
                         help='batch size')
     parser.add_argument('--weight_decay', type=float, default=1e-4,
                         help='weight decay of optimizer SGD')
-    parser.add_argument('--num_classes', type=int, default=18,
+    parser.add_argument('--num_classes', type=int, default=17,
                         help='the number of classes in dataset')
     parser.add_argument('--lr_scheduling', type=bool, default=True,
                         help='apply learning rate scheduler')
@@ -90,6 +95,7 @@ def main(args):
         early_stop=args.early_stop,
         train_log_step=args.train_log_step,
         valid_log_step=args.valid_log_step,
+        weight_save_dir=args.weight_save_dir,
     )
 
     history = model.fit(train_loader, valid_loader)
