@@ -16,7 +16,7 @@ from train import Trainer
 
 def get_args_parser():
     parser = argparse.ArgumentParser(description='Training', add_help=False)
-    parser.add_argument('--weight_save_dir', type=str, required=True,
+    parser.add_argument('--save_weight_dir', type=str, required=True,
                         help='the path to store weights')
     parser.add_argument('--weight_dir', type=str, required=True,
                         help='the directory of weight of pre-trained model')
