@@ -45,23 +45,24 @@ classes = {
 
 ## Create environment on anaconda  
 ```
-conda env create --file environment.yaml
+conda env create --f environment.yaml
 ```
 
 ## Train
 ```
-usage: main.py [-h] [--weight_dir WEIGHT_DIR] [--data_dir DATA_DIR] [--lr LR] [--epochs EPOCHS] \
-               [--batch_size BATCH_SIZE] [--weight_decay WEIGHT_DECAY] \[--num_classes NUM_CLASSES] \
-               [--lr_scheduling LR_SCHEDULING] [--check_point CHECK_POINT] [--early_stop EARLY_STOP] \
-               [--img_height IMG_HEIGHT] [--img_width IMG_WIDTH] [--train_log_step TRAIN_LOG_STEP] \
-               [--valid_log_step VALID_LOG_STEP]
+usage: main.py [-h] [--save_weight_dir SAVE_WEIGHT_DIR] [--weight_dir WEIGHT_DIR] [--data_dir DATA_DIR] \ 
+	       [--lr LR] [--end_lr END_LR] [--epochs EPOCHS] [--batch_size BATCH_SIZE] \
+	       [--weight_decay WEIGHT_DECAY] [--num_classes NUM_CLASSES] [--lr_scheduling LR_SCHEDULING] \
+	       [--check_point CHECK_POINT] [--early_stop EARLY_STOP] [--img_height IMG_HEIGHT] \
+	       [--img_width IMG_WIDTH] [--train_log_step TRAIN_LOG_STEP] [--valid_log_step VALID_LOG_STEP]
 
-example: python main.py --data_dir ./dataset --weight_dir ./weights/bisenetv2_city.pth --num_classes 28
+example: python main.py --save_weight_dir ./current_date_weights --data_dir ./dataset --weight_dir ./weights/bisenetv2_pretrained.pth --num_classes 17
 ```
 
 ## Evaluate  
 ```
-usage: eval.py [-h] [--weight_dir WEIGHT_DIR] [--data_dir DATA_DIR] [--num_classes NUM_CLASSES]
+usage: eval.py [-h] [--weight_dir WEIGHT_DIR] [--data_dir DATA_DIR] [--num_classes NUM_CLASSES] \
+               [--data_preprocess DATA_PREPROCESS]
 
-example: python main.py --data_dir ./dataset --weight_dir ./weights/best_weight.pt --num_classes 28
+example: python main.py --data_dir ./dataset --weight_dir ./weights/best_weight.pt --num_classes 17
 ```
