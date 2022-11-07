@@ -41,7 +41,7 @@ class Metrics(object):
         pred = F.softmax(pred, dim=self.dim)
         pred = torch.argmax(pred, dim=self.dim)
         
-        correct = torch.eq(pred, label).int()
+        correct = torch.eq(pred.view(-1), label.view(-1)).int()
         accuracy = correct.sum() / correct.numel()
 
         return accuracy
