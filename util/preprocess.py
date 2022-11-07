@@ -124,7 +124,6 @@ class Debugging(object):
                 else:
                     pass
 
-
     def check_segmaps(self, range_=50):
         files = glob(self.path+'/**/labels/*')
 
