@@ -122,7 +122,7 @@ class EvalDataset(Dataset):
             9: 3, 10: ignore_index, 11: 4, 12: 5, 13: 6, 14: 7, 15: 8,
             16: ignore_index, 17: 9, 18: 10, 19: 11, 20: 12, 21: 13,
             22: 14, 23: ignore_index, 24: ignore_index, 25: 15, 26: 16,
-            27: ignore_index, 28: 17
+            27: ignore_index,
         }
 
     def __len__(self):
