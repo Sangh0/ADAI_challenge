@@ -71,7 +71,7 @@ example: python main.py --data_dir ./dataset --weight_dir ./weights/best_weight.
 ```
 
 ## Visualization in Jupyter Notebook  
-'''python
+```python
 from eval import Evaluation
 
 eval = Evaluation(
@@ -91,4 +91,4 @@ eval.visualize(
     result['miou'],
     count=30,
 )
-'''
+```
