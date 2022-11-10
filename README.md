@@ -82,7 +82,6 @@ eval = Evaluation(
 )
 
 result = eval.test()
-images, labels, outputs, mious = result['imags'], result['label'], result['output'], result['miou']
 
 eval.visualize(
     result['imags'],
