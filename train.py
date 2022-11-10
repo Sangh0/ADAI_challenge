@@ -24,6 +24,8 @@ class Trainer(object):
         end_lr: float,
         epochs: int, 
         weight_decay: float,
+        miou_loss_weight: float,
+        ohem_ce_loss_weight: float,
         lr_scheduling: bool=True,
         check_point: bool=True, 
         early_stop: bool=False,
@@ -31,16 +33,21 @@ class Trainer(object):
         valid_log_step: int=20,
         weight_save_dir='./weights',
     ):
+        
+        self.logger = logging.getLogger('The logs of training model')
+        self.logger.setLevel(logging.INFO)
+        stream_handler = logging.StreamHandler()
+        self.logger.addHandler(stream_handler)
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        print(f'device is {self.device}...')
+        self.logger.info(f'device is {self.device}...')
 
         self.model = model.to(self.device)
         self.epochs = epochs
 
         self.loss_func = OhemCELoss(thresh=0.7)
         self.metric = Metrics(n_classes=num_classes, dim=1)
-        print('loss function ready...')
+        self.logger.info('loss function ready...')
 
         self.optimizer = optim.SGD(
             self.model.parameters(),
@@ -48,15 +55,18 @@ class Trainer(object):
             momentum=0.9,
             weight_decay=weight_decay,
         )
-        print('optimizer ready...')
+        self.logger.info('optimizer ready...')
 
+        self.miou_loss_weight = miou_loss_weight
+        self.ohem_ce_loss_weight = ohem_ce_loss_weight
+        
         self.lr_scheduling = lr_scheduling
         self.lr_scheduler = PolynomialLRDecay(
             self.optimizer, 
             max_decay_steps=self.epochs,
             end_learning_rate=end_lr,
         )
-        print('scheduler ready...')
+        self.logger.info('scheduler ready...')
 
         os.makedirs(weight_save_dir, exist_ok=True)
         self.check_point = check_point
@@ -64,7 +74,7 @@ class Trainer(object):
 
         self.early_stop = early_stop
         self.es = EarlyStopping(patience=20, verbose=True, path=weight_save_dir+'/early_stop.pt')
-        print('callbacks ready...')
+        self.logger.info('callbacks ready...')
 
         self.train_log_step = train_log_step
         self.valid_log_step = valid_log_step
@@ -79,7 +89,7 @@ class Trainer(object):
         self.weight_save_dir = weight_save_dir
 
     def fit(self, train_loader, valid_loader):  
-        print('\nStart Training Model...!')
+        self.logger.info('\nStart Training Model...!')
         start_training = time.time()
         for epoch in tqdm(range(self.epochs)):
             init_time = time.time()
@@ -104,7 +114,7 @@ class Trainer(object):
 
             if self.check_point:
                 path = self.weight_save_dir+f'/check_point_{epoch+1}.pt'
-                self.cp(valid_loss, self.model, path)
+                self.cp(1-valid_miou, self.model, path)
 
             if self.early_stop:
                 self.es(valid_loss, self.model)
@@ -116,7 +126,7 @@ class Trainer(object):
 
         self.writer.close()
         end_training = time.time()
-        print(f'\nTotal time for training is {end_training-start_training:.2f}s')
+        self.logger.info(f'\nTotal time for training is {end_training-start_training:.2f}s')
 
         return {
             'model': self.model,
@@ -141,15 +151,18 @@ class Trainer(object):
             a_loss2 = self.loss_func(s3, labels.squeeze())
             a_loss3 = self.loss_func(s4, labels.squeeze())
             a_loss4 = self.loss_func(s5, labels.squeeze())
-            loss = p_loss + (a_loss1 + a_loss2 + a_loss3 + a_loss4)
-            batch_loss += loss.item()
+            total_loss = p_loss + (a_loss1 + a_loss2 + a_loss3 + a_loss4)
+            batch_loss += total_loss.item()
+
+            loss = self.miou_loss_weight * (1-miou) + self.ohem_ce_loss_weight * total_loss
             
             if (batch+1) % self.valid_log_step == 0:
                 self.logger.info(f'\n{" "*20} Valid Batch {batch+1}/{len(valid_loader)} {" "*20}'
                         f'\nvalid loss: {loss:.3f}, mean IOU: {miou:.3f}, pix accuracy: {pix_acc:.3f}')
             
             step = len(valid_loader) * epoch + batch
-            self.writer.add_scalar('Valid/total loss', loss.item(), step)
+            self.writer.add_scalar('Valid/total loss', total_loss.item(), step)
+            self.writer.add_scalar('Valid/miou term + total_loss', loss.item(), step)
             self.writer.add_scalar('Valid/principal loss', p_loss.item(), step)
             self.writer.add_scalar('Valid/auxiliary loss 2', a_loss1.item(), step)
             self.writer.add_scalar('Valid/auxiliary loss 3', a_loss2.item(), step)
@@ -180,8 +193,12 @@ class Trainer(object):
             a_loss2 = self.loss_func(s3, labels.squeeze())
             a_loss3 = self.loss_func(s4, labels.squeeze())
             a_loss4 = self.loss_func(s5, labels.squeeze())
-            loss = p_loss + (a_loss1 + a_loss2 + a_loss3 + a_loss4)
-            batch_loss += loss.item()
+            # 여기에 total loss 추가함
+            total_loss = p_loss + (a_loss1 + a_loss2 + a_loss3 + a_loss4)
+            batch_loss += total_loss.item()
+            # add miou term
+            loss = self.miou_loss_weight * (1-miou) + self.ohem_ce_loss_weight * total_loss
+            
 
             loss.backward()
             self.optimizer.step()
@@ -191,13 +208,15 @@ class Trainer(object):
                         f'\ntrain loss: {loss:.3f}, mean IOU: {miou:.3f}, pix accuracy: {pix_acc:.3f}')
 
             step = len(train_loader) * epoch + batch
-            self.writer.add_scalar('Train/total loss', loss, step)
+            self.writer.add_scalar('Train/total loss', total_loss.item(), step)
+            # tensorboard log 추가함
+            self.writer.add_scalar('Train/miou loss + total loss', loss, step)
             self.writer.add_scalar('Train/principal loss', p_loss.item(), step)
             self.writer.add_scalar('Train/auxiliary loss 2', a_loss1.item(), step)
             self.writer.add_scalar('Train/auxiliary loss 3', a_loss2.item(), step)
             self.writer.add_scalar('Train/auxiliary loss 4', a_loss3.item(), step)
             self.writer.add_scalar('Train/auxiliary loss 5', a_loss4.item(), step)
-            self.writer.add_scalar('Train/miou', miou, step)
-            self.writer.add_scalar('Train/pixel accuracy', pix_acc, step)
+            self.writer.add_scalar('Train/miou', miou.item(), step)
+            self.writer.add_scalar('Train/pixel accuracy', pix_acc.item(), step)
 
         return batch_loss/(batch+1), batch_miou/(batch+1), batch_pix_acc/(batch+1)

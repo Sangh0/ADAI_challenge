@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/home/hoo7311/anaconda3/envs/pytorch/lib/python3.8/site-packages')
 import os
 import argparse
 import time
