@@ -3,6 +3,9 @@ import argparse
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
+import sys
+sys.path.append('/home/hoo7311/anaconda3/envs/pytorch/lib/python3.8/site-packages')
+
 from torch.utils.data import DataLoader
 from torchsummary import summary
 
@@ -29,6 +32,10 @@ def get_args_parser():
                         help='batch size')
     parser.add_argument('--weight_decay', type=float, default=1e-4,
                         help='weight decay of optimizer SGD')
+    parser.add_argument('--miou_weight', type=float, default=0.5,
+                        help='set weight of miou loss term in total loss function')
+    parser.add_argument('--celoss_weight', type=float, default=0.5,
+                        help='set weight of ce loss term in total loss function')
     parser.add_argument('--num_classes', type=int, default=17,
                         help='the number of classes in dataset')
     parser.add_argument('--lr_scheduling', type=bool, default=True,
@@ -87,12 +94,14 @@ def main(args):
         end_lr=args.end_lr,
         epochs=args.epochs,
         weight_decay=args.weight_decay,
+        miou_loss_weight=args.miou_weight,
+        ohem_ce_loss_weight=args.celoss_weight,
         lr_scheduling=args.lr_scheduling,
         check_point=args.check_point,
         early_stop=args.early_stop,
         train_log_step=args.train_log_step,
         valid_log_step=args.valid_log_step,
-        weight_save_dir=args.weight_save_dir,
+        weight_save_dir=args.save_weight_dir,
     )
 
     history = model.fit(train_loader, valid_loader)
