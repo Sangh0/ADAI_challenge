@@ -22,6 +22,8 @@ def get_args_parser():
                         help='the directory of weight of pre-trained model')
     parser.add_argument('--data_dir', type=str, required=True,
                         help='the directory where your dataset is located')
+    parser.add_argument('--data_mode', type=str, default='white',
+                        help='use only dataset of white, dark or all')
     parser.add_argument('--lr', type=float, default=5e-3,
                         help='learning rate for training')
     parser.add_argument('--end_lr', type=float, default=1e-7,
@@ -58,6 +60,7 @@ def main(args):
     
     train_data = SemanticSegmentationDataset(
         path=args.data_dir,
+        data_mode=args.data_mode,
         subset='train',
         crop_size=(args.img_height, args.img_width),
         transforms_=True,
@@ -72,6 +75,7 @@ def main(args):
 
     valid_data = SemanticSegmentationDataset(
         path=args.data_dir,
+        data_mode=args.data_mode,
         subset='valid',
         crop_size=(1920, 1080),
         transforms_=True,
