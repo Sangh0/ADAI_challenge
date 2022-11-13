@@ -45,21 +45,23 @@ classes = {
 
 ## Create environment on anaconda  
 ```
-conda env create --file environment.yaml
-conda activate adai2022
-cd ./ADAI_challenge
+$ git clone this repository
+$ cd ADAI_challenge
+$ conda env create --file environment.yaml
+$ conda activate adai2022
 ```
 
 ## Train
 ```
 usage: main.py [-h] [--save_weight_dir SAVE_WEIGHT_DIR] [--weight_dir WEIGHT_DIR] [--data_dir DATA_DIR] \ 
-	       [--lr LR] [--end_lr END_LR] [--epochs EPOCHS] [--batch_size BATCH_SIZE] \
+	       [--data_mode DATA_MODE] [--lr LR] [--end_lr END_LR] [--epochs EPOCHS] [--batch_size BATCH_SIZE] \
 	       [--weight_decay WEIGHT_DECAY] [--miou_weight MIOU_WEIGHT] [--celoss_weight CELOSS_WEIGHT] \
 	       [--num_classes NUM_CLASSES] [--lr_scheduling LR_SCHEDULING] [--check_point CHECK_POINT] \
 	       [--early_stop EARLY_STOP] [--img_height IMG_HEIGHT] [--img_width IMG_WIDTH] \
 	       [--train_log_step TRAIN_LOG_STEP] [--valid_log_step VALID_LOG_STEP]
 
-example: python main.py --save_weight_dir ./current_date_weights --data_dir ./dataset --weight_dir ./weights/bisenetv2_pretrained.pth --num_classes 17
+example: 
+$ python main.py --save_weight_dir ./current_date_weights --data_dir ./dataset/ --weight_dir ./weights/bisenetv2_pretrained.pth --num_classes 15
 ```
 
 ## Evaluate  
@@ -67,7 +69,8 @@ example: python main.py --save_weight_dir ./current_date_weights --data_dir ./da
 usage: eval.py [-h] [--weight_dir WEIGHT_DIR] [--data_dir DATA_DIR] [--num_classes NUM_CLASSES] \
                [--batch_size BATCH_SIZE] [--data_preprocess DATA_PREPROCESS]
 
-example: python main.py --data_dir ./dataset --weight_dir ./weights/best_weight.pt --num_classes 17
+example: 
+$ python main.py --data_dir ./dataset --weight_dir ./weights/best_weight.pt --num_classes 15 --data_preprocess True
 ```
 
 ## Visualization in Jupyter Notebook  
@@ -77,7 +80,7 @@ from eval import Evaluation
 eval = Evaluation(
     path='./dataset',
     batch_size=8,
-    num_classes=16,
+    num_classes=15,
     weight_path='./best_weight.pt',
 )
 
