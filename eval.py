@@ -110,8 +110,8 @@ class Evaluation(object):
             'output': torch.cat(output_list, dim=0),
             'miou': miou_list,
         }
-    
-    
+
+
     @torch.no_grad()
     def label2color(self, labels):
         _, H, W = labels.size()
@@ -119,7 +119,7 @@ class Evaluation(object):
         for i in self.labels_info.keys():
             image[(labels==i).all(axis=0)] = self.labels_info[i]
         return image
-    
+
     
     @torch.no_grad()
     def visualize(self, images, labels, outputs, mious, counts, save=False):
@@ -172,6 +172,7 @@ def main(args):
         path=args.data_dir, 
         weight_path=args.weight_dir, 
         batch_size=args.batch_size,
+        num_classes=args.num_classes,
         preprocess=args.data_preprocess,
     )
     eval.test()
