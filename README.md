@@ -70,7 +70,7 @@ usage: eval.py [-h] [--weight_dir WEIGHT_DIR] [--data_dir DATA_DIR] [--num_class
                [--batch_size BATCH_SIZE] [--data_preprocess DATA_PREPROCESS]
 
 example: 
-$ python main.py --data_dir ./dataset --weight_dir ./weights/best_weight.pt --num_classes 15 --data_preprocess True
+$ python eval.py --data_dir ./dataset --weight_dir ./weights/best_weight.pt --num_classes 15 --data_preprocess True
 ```
 
 ## Visualization in Jupyter Notebook  
